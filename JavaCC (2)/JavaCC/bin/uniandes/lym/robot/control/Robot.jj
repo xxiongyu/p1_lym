@@ -59,21 +59,44 @@ SKIP:
 TOKEN: /* Nombres de Comandos */
 {
 
-			<MOV:  "Mov">
+			<MOVES:  "Moves">
 		| 	<RIGHT: "RIGHT">
 		| 	<PUT: "Put">
-		| 	<PICK: "Pick">
 		|  < POP: "Pop" >
 		|  <GO: "GO" >
-        |  < HOP:  "HOP" >		
+        |  < HOP:  "HOP" >
+        
+        |  <TURNTOMY: "TurnToMy" >
+        |  <TURNTOTHE: "TurnToThe" >
+        |  <WALK: "Walk" >
+        |  <JUMP: "Jump" >
+        |  <DROP: "Drop" >
+        |  <WALK: "Walk" >
+        | 	<PICK: "Pick">
+        | 	<GRAB: "Grab">
+        | 	<LETGO: "LetGo">
+        | 	<POP: "Pop">
+        | <NOP: "Nop">
+        | <SAFEEXEC: "SafeExec">
+        | 	<ISBLOCKED: "IsBlocked">
+        | 	<ISFACING: "IsFacing">
+        | 	<ZERO: "Zero">
+        | 	<NOT: "Not">
+        |	< IF: "if" >
 
 }
 
 TOKEN:
 {
-		<BALLOONS:  "BALLOONS" >
-		|	<CHIPS:     "CHIPS"  >	
-
+		<RIGHT: "right">
+		| <LEFT: "left">
+		| <BACK: "back">
+		| <NORTH: "north">
+		| <SOUTH: "south">
+		| <EAST: "east">
+		| <WEST: "west">
+		| <FRONT: "Front">
+		| <COMA:"," >
 }
 
 
@@ -98,13 +121,16 @@ TOKEN :
 	
 	{
 		(		  (
-		   <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
-		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
-		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
-		| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
-		|  <PUT> "("  put() ")"					  			
-		|  <PICK> "(" get()  ")"	
-	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
+		   <WALK>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
+		| 	<JUMP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
+		|  <DROP> "("  x=num() ")" {world.putChips(x); salida = "Command:  Put Chips"; }					  			
+		|  <PICK> "(" x=num()  ")"	{world.pickChips(x);salida = "Command:  Pick chips";}
+	    |  <POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
+	    | <GRAB> "(" x=num() ")" {world.grabBalloons(x);salida="Command:  Grab balloons";}
+	    | <LETGO> "(" x=num() ")" {world.putBalloons(x); salida = "Command:  LetGo Balloons";}
+	    |  <TURNTOMY > "(" turntomy() ")"
+	    | <TURNTOTHE> "(" turntothe() ")"
+	    | <IF> "(" condi_if() 
 		) ";" 
 
 		{
@@ -121,25 +147,144 @@ TOKEN :
     	| <EOF> {return false;} 
 	}
 
-	void put() :
-	{
-		int f=1;	
-	}
-	{
-		( <CHIPS>    "," f=num() {world.putChips(f); salida = "Command:  Put Chips"; })
-		|  	  ( <BALLOONS>   "," f=num() {world.putBalloons(f); salida = "Command:  Put Balloons";})	 
+//cambios_p1
+	void comandos(): { }{ 
+		<WALK>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
+		| 	<JUMP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
+		|  <DROP> "("  x=num() ")" {world.putChips(x); salida = "Command:  Put Chips"; }					  			
+		|  <PICK> "(" x=num()  ")"	{world.pickChips(x);salida = "Command:  Pick chips";}
+	    |  <POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
+	    | <GRAB> "(" x=num() ")" {world.grabBalloons(x);salida="Command:  Grab balloons";}
+	    | <LETGO> "(" x=num() ")" {world.putBalloons(x); salida = "Command:  LetGo Balloons";}
+	    |  <TURNTOMY > "(" turntomy() ")"
+	    | <TURNTOTHE> "(" turntothe() ")" }
+	
 
+
+
+	void turntomy() :
+	{
+	}
+	{
+	  (<RIGHT> { world.turnRight(); salida = "Command: turn right";})
+	| (<LEFT> { world.turnRight(); world.turnRight(); world.turnRight(); salida = "Command: turn left"; })
+	| (<BACK> { world.turnRight(); world.turnRight(); salida = "Command: turn back"; })	    
 	}
 
-	void get() :
+	void turntothe():
 	{
-		int f=1;	
+	  int currentFacing;
+	  int turnsNeeded = 0;
+	  int targetDirection;
 	}
 	{
-		( <CHIPS>   "," f=num() {world.pickChips(f);salida = "Command:  Pick chips";})
-		|  	  ( <BALLOONS>   "," f=num() {world.grabBalloons(f);salida="Command:  Pick balloons";})	 
+	  (
+      <NORTH> { targetDirection = 0; }
+    |
+      <SOUTH> { targetDirection = 1; }
+    |
+      <EAST> { targetDirection = 2; }
+    |
+      <WEST> { targetDirection = 3; }
+    )
+    {
+        currentFacing = world.getFacing();  // Obtener la dirección actual
 
+        // Calcular el número de giros a la derecha necesarios
+        if (0.equals(currentFacing)) {
+            if (2.equals(targetDirection)) { turnsNeeded = 1; }
+            else if (1.equals(targetDirection)) { turnsNeeded = 2; }
+            else if (3.equals(targetDirection)) { turnsNeeded = 3; }
+        } else if (2.equals(currentFacing)) {
+            if (1.equals(targetDirection)) { turnsNeeded = 1; }
+            else if (3.equals(targetDirection)) { turnsNeeded = 2; }
+            else if (0.equals(targetDirection)) { turnsNeeded = 3; }
+        } else if (1.equals(currentFacing)) {
+            if (3.equals(targetDirection)) { turnsNeeded = 1; }
+            else if (0.equals(targetDirection)) { turnsNeeded = 2; }
+            else if (2.equals(targetDirection)) { turnsNeeded = 3; }
+        } else if (3.equals(currentFacing)) {
+            if (0.equals(targetDirection)) { turnsNeeded = 1; }
+            else if (2.equals(targetDirection)) { turnsNeeded = 2; }
+            else if (1.equals(targetDirection)) { turnsNeeded = 3; }
+        }
+
+        // Realizar los giros a la derecha
+        for (int i = 0; i < turnsNeeded; i++) {
+            world.turnRight();
+        }
+
+        // Mensaje de salida
+        salida = "Command: Turn to " + targetDirection;
+    } 	    
 	}
+
+	void moves():
+	{
+	  int orinalFacing = world.getFacing();
+	  int currentFacing;
+	  int turnsNeeded = 0;
+	}
+	{
+	  direction()
+	  (<COMMA> direction())*
+	  {
+	    currentFacing = world.getFacing();  // Obtener la dirección actual
+
+        // Calcular el número de giros a la derecha necesarios
+        if (0.equals(currentFacing)) {
+            if (2.equals(orinalFacing)) { turnsNeeded = 1; }
+            else if (1.equals(orinalFacing)) { turnsNeeded = 2; }
+            else if (3.equals(orinalFacing)) { turnsNeeded = 3; }
+        } else if (2.equals(currentFacing)) {
+            if (1.equals(orinalFacing)) { turnsNeeded = 1; }
+            else if (3.equals(orinalFacing)) { turnsNeeded = 2; }
+            else if (0.equals(orinalFacing)) { turnsNeeded = 3; }
+        } else if (1.equals(currentFacing)) {
+            if (3.equals(orinalFacing)) { turnsNeeded = 1; }
+            else if (0.equals(orinalFacing)) { turnsNeeded = 2; }
+            else if (2.equals(orinalFacing)) { turnsNeeded = 3; }
+        } else if (3.equals(currentFacing)) {
+            if (0.equals(orinalFacing)) { turnsNeeded = 1; }
+            else if (2.equals(orinalFacing)) { turnsNeeded = 2; }
+            else if (1.equals(orinalFacing)) { turnsNeeded = 3; }
+
+        for (int i = 0; i < turnsNeeded; i++) {
+            world.turnRight();
+        }
+	  }
+	}
+	}
+	
+
+	void direction():
+	{}
+	{
+	(
+      <FORWARD> { world.moveForward(1, false); }
+    |
+      <RIGHT> { turnRight(); world.moveForward(1, false);}
+    |
+      <LEFT> { turnRight(); turnRight(); turnRight(); world.moveForward(1, false);}
+    |
+      <BACKWARDS> {turnRight(); turnRight(); moveForward(1, false);}
+    )
+    
+	}
+
+	void condi_if():
+	{
+	  boolean check;
+	  point p = world.getPosition;
+	}
+	{
+	  (<ISFACING> "?" "(" < NORTH > ")" {check = world.facingNorth();}
+	| <ISFACING> "?" "(" < SOUTH > ")" {check = world.facingSouth();}
+	| <ISFACING> "?" "(" < EAST > ")" {check = world.facingEast();}
+	| <ISFACING> "?" "(" < WEST > ")" {check = world.facingWest();}
+	| <ZERO > "?" "(" x=num() ")" {if ( x.equals(0)) { check = true} }	  )
+	}
+
 
 	
 	
@@ -151,7 +296,8 @@ TOKEN :
 	 */
 
 	int num() throws Error:
-	{	
+	{
+	  
 		int total=1;
 	}
 	{
